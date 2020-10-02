@@ -33,5 +33,5 @@ This script perform PSID model identification and visualizes the learned eigenva
 # Licence
 Copyright (c) 2020 University of Southern California  
 See full notice in [LICENSE.md](LICENSE.md)  
-Omid G. Sani and Maryam M. Shanechi
+Omid G. Sani and Maryam M. Shanechi  
 Shanechi Lab, University of Southern California
