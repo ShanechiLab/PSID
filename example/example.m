@@ -27,14 +27,14 @@ zTest = data.z(testInds, :);
 idSys1 = PSID(yTrain', zTrain', 2, 2, 10);
 
 % Predict behavior using the learned model
-[zTestPred1, xTestPred1] = PSIDPredict(idSys1, yTest);
+[zTestPred1, ~, xTestPred1] = PSIDPredict(idSys1, yTest);
 
 % Compute CC of decoding
 nz = size(zTest, 2);
 CC = arrayfun( @(i)( corr(zTestPred1(:, i), zTest(:, i)) ), 1:nz );
 
 % Predict behavior using the true model for comparison
-[zTestPredIdeal, xTestIdeal] = PSIDPredict(data.trueSys, yTest);
+[zTestPredIdeal, ~, xTestIdeal] = PSIDPredict(data.trueSys, yTest);
 CCIdeal = arrayfun( @(i)( corr(zTestPredIdeal(:, i), zTest(:, i)) ), 1:nz ); % Compute CC of ideal decoding
 
 fprintf('PSID decoding CC = %.3g, ideal decoding CC using true model = %.3g\n', mean(CC), mean(CCIdeal));
@@ -67,7 +67,7 @@ yTestT = arrayfun( @(yt)( yt{1}.' ), yTest, 'UniformOutput', false);
 % yTestCat = cell2mat( yTestT ); % Data can also be concatenated for
                 % decoding if taking last state in a previous trial as the 
                 % initial state in the next trial makes sense
-[zTestPred1, xTestPred1Cell] = PSIDPredict(idSys3, yTestT);
+[zTestPred1, ~, xTestPred1Cell] = PSIDPredict(idSys3, yTestT);
 
 zTestPred1Cat = cell2mat( zTestPred1 );
 % zTestPred1Cat = zTestPred1;

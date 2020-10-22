@@ -66,7 +66,8 @@ if ~isstruct(WS), WS = struct; end
 [ny, ySamples, N, y1] = getHSize(y, i);
 [nz, zSamples, ~, z1] = getHSize(z, i);
 
-if isfield(WS, 'N') && isequal(WS.N, N) && isfield(WS, 'k') && isequal(WS.k, i) ...
+if isfield(WS, 'N') && isequal(WS.N, N) ...
+    && isfield(WS, 'k') && isequal(WS.k, i) ...
     && isfield(WS, 'ny') && isequal(WS.ny, ny) ...
     && isfield(WS, 'ySamples') && isequal(WS.ySamples, ySamples) ...
     && isfield(WS, 'y1') && isequal(WS.y1, y1) ...
@@ -97,6 +98,7 @@ end
 
 if n1 > nx, n1 = nx; end % n1 can at most be nx
 
+% Stage 1
 if n1 > 0 && nz > 0
     if ~isfield(WS, 'ZHat_U') || isempty(WS.ZHat_U)
         % Zp = blkhankskip(z, k, N);
@@ -127,6 +129,7 @@ else
     Xk_Plus1 = [];
 end
 
+% Stage 2
 n2 = nx - n1;
 if n2 > 0
     if ~isfield(WS, 'YHat_U') || isempty(WS.YHat_U) || ~isfield(WS, 'n1') || ~isequal(WS.n1, n1)

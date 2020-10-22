@@ -16,13 +16,13 @@
 %               Has dimensions T x nz
 %               [zPred(1); zPred(2); zPred(3); ...; zPred(T)]
 %               with z(i) the best prediction of z(i) using y(1),...,y(i-1)
-%     - (2) xPred (optional): same as (1), for the latent states
-%     - (3) yPred (optional): same as (1), for the observation y itself
+%     - (2) yPred (optional): same as (1), for the observation y itself
+%     - (3) xPred (optional): same as (1), for the latent states
 %   Usage example:
 %       idSys = PSID(yTrain, zTrain, nx, n1, i);
-%       [zPred, xPred] = PSIDPredict(idSys, yTest);
+%       [zPred, ~, xPred] = PSIDPredict(idSys, yTest);
 
-function [zPred, xPred, yPred] = PSIDPredict(idSys, y, u, settings)
+function [zPred, yPred, xPred] = PSIDPredict(idSys, y, u, settings)
 
 if nargin < 3, u = []; end
 if nargin < 4, settings = struct; end
@@ -33,7 +33,7 @@ if iscell(y)
     yPred = cell(size(y));
     if isempty(u), u = cell(size(y)); end
     for yInd = 1:numel(y)
-        [zPred{yInd}, xPred{yInd}, yPred{yInd}] = PSIDPredict(idSys, y{yInd}, u{yInd}, settings);
+        [zPred{yInd}, yPred{yInd}, xPred{yInd}] = PSIDPredict(idSys, y{yInd}, u{yInd}, settings);
     end
     return
 end
