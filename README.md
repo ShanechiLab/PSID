@@ -1,6 +1,6 @@
 # PSID: Preferential subspace identification <br/> [MATLAB implementation]
 
-For Python implementation see [http://github.com/ShanechiLab/PyPSID](github.com/ShanechiLab/PyPSID)
+For Python implementation see http://github.com/ShanechiLab/PyPSID
 
 Given signals y_t (e.g. neural signals) and z_t (e.g behavior), PSID learns a dynamic model for y_t while prioritizing the dynamics that are relevant to z_t. 
 
