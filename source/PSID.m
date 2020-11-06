@@ -34,18 +34,37 @@
 %   
 %   Inputs:
 %     - (1) y: Inputs signal 1 (e.g. neural signal). 
-%               Must be ny x T:
-%               [y(1), y(2), y(3), ..., y(T)]
+%             Must be a T x ny matrix (unless time_first=False).
+%             It can also be a cell array of matrices, one for each data segment (e.g. trials):
+%             [y(1); y(2); y(3); ...; y(T)]
+%             Segments do not need to have the same number of samples.
 %     - (2) z: Inputs signal 2, to be studied using y (e.g. behavior). 
-%               Must be nz x T:
-%               [z(1), z(2), z(3), ..., z(T)]
+%             Format options are similar to y. 
+%             Must be a T x nz matrix (unless time_first=False).
+%             It can also be a cell array of matrices, one for each data segment (e.g. trials):
+%             [z(1); z(2); z(3); ...; z(T)]
+%             Segments do not need to have the same number of samples.
 %     - (3) nx: the total number of latent states in the stochastic model
 %     - (4) n1: number of latent states to extract in the first stage.
-%     - (5) i: the number of block-rows (i.e. future and past horizon) 
+%     - (5) i: the number of block-rows (i.e. future and past horizon). 
+%             Different values of i may have different identification performance. 
+%             Must be at least 2. It also determines the maximum n1 and nx 
+%             that can be used per:
+%             n1 <= nz * i
+%             nx <= ny * i
+%             So if you have a low dimensional y or z, you typically would choose larger 
+%             values for i, and vice versa.
 %     - (6) ws (optional): the ws output from a previous call using the exact 
 %               same data. If calling PSID_QRS repeatedly with the same data 
 %               and horizon, several computationally costly steps can be 
 %               reused from before. Otherwise will be discarded.
+%     - (7) fit_Cz_via_KF (default: true): if true (preferred option), 
+%             refits Cz more accurately using a KF after all other 
+%             paramters are learned
+%     - (8) time_first (default: true): if true, will expect the time dimension 
+%             of the data to be the first dimension (e.g. z is T x nz). If false, 
+%             will expect time to be the second dimension in all data 
+%             (e.g. z is nz x T).
 %   Outputs:
 %     - (1) idSys: structure with the system parameters for the identified
 %           system. Will have the following fields (defined above):
@@ -58,13 +77,16 @@
 %       [idSys, WS] = PSID(y, z, nx, n1, i, WS);
 %       idSysSID = PSID(y, z, nx, 0, i); % Set n1=0 for SID
 
-function [idSys, WS] = PSID(y, z, nx, n1, i, WS)
+function [idSys, WS] = PSID(y, z, nx, n1, i, WS, fit_Cz_via_KF, time_first)
 
 if nargin < 6, WS = struct; end
-if ~isstruct(WS), WS = struct; end
+if ~isstruct(WS) || isempty(WS), WS = struct; end
 
-[ny, ySamples, N, y1] = getHSize(y, i);
-[nz, zSamples, ~, z1] = getHSize(z, i);
+if nargin < 7 || isempty(fit_Cz_via_KF), fit_Cz_via_KF = true; end
+if nargin < 8 || isempty(time_first), time_first = true; end
+
+[ny, ySamples, N, y1] = getHSize(y, i, time_first);
+[nz, zSamples, ~, z1] = getHSize(z, i, time_first);
 
 if isfield(WS, 'N') && isequal(WS.N, N) ...
     && isfield(WS, 'k') && isequal(WS.k, i) ...
@@ -89,10 +111,10 @@ else
 end
 
 if ~isfield(WS, 'Yp') || isempty(WS.Yp)
-    WS.Yp = blkhankskip(y, i, N);
-    WS.Yii = blkhankskip(y, 1, N, i);
+    WS.Yp = blkhankskip(y, i, N, 0, time_first);
+    WS.Yii = blkhankskip(y, 1, N, i, time_first);
     if nz > 0
-        WS.Zii = blkhankskip(z, 1, N, i);
+        WS.Zii = blkhankskip(z, 1, N, i, time_first);
     end
 end
 
@@ -101,13 +123,13 @@ if n1 > nx, n1 = nx; end % n1 can at most be nx
 % Stage 1
 if n1 > 0 && nz > 0
     if ~isfield(WS, 'ZHat_U') || isempty(WS.ZHat_U)
-        % Zp = blkhankskip(z, k, N);
-        Zf = blkhankskip(z, i, N, i);
-        WS.ZHat = (Zf / WS.Yp) * WS.Yp; % Zf * WS.Yp.' * pinv(WS.Yp * WS.Yp.') * WS.Yp;  % Eq. (10)
+        % Zp = blkhankskip(z, k, N, 0, time_first);
+        Zf = blkhankskip(z, i, N, i, time_first);
+        WS.ZHat = projOrth( Zf, WS.Yp ); % Zf * WS.Yp.' * pinv(WS.Yp * WS.Yp.') * WS.Yp;  % Eq. (10)
         
         Yp_Plus = [WS.Yp; WS.Yii];
         Zf_Minus = Zf((nz+1):end, :);
-        WS.ZHatMinus = (Zf_Minus / Yp_Plus) * Yp_Plus; % Zf_Minus * Yp_Plus.' * pinv(Yp_Plus * Yp_Plus.') * Yp_Plus;  % Eq. (11)
+        WS.ZHatMinus = projOrth( Zf_Minus, Yp_Plus ); % Zf_Minus * Yp_Plus.' * pinv(Yp_Plus * Yp_Plus.') * Yp_Plus;  % Eq. (11)
 
         % Take SVD of ZHat
         [WS.ZHat_U,WS.ZHat_S,~] = svd(WS.ZHat, 'econ');  % Eq. (12)
@@ -135,7 +157,7 @@ if n2 > 0
     if ~isfield(WS, 'YHat_U') || isempty(WS.YHat_U) || ~isfield(WS, 'n1') || ~isequal(WS.n1, n1)
         WS.n1 = n1; % Will store RYfYp after subtracting the prediction of the first n1 states 
         
-        Yf = blkhankskip(y, i, N, i);
+        Yf = blkhankskip(y, i, N, i, time_first);
         Yf_Minus = Yf((ny+1):end, :);
         
         if n1 > 0 % Have already extracted some states, so remove the already predicted part of Yf
@@ -147,10 +169,10 @@ if n2 > 0
             Yf_Minus = Yf_Minus - Oy1_Minus * Xk_Plus1;     % Eq. (21)
         end
         
-        WS.YHat = (Yf / WS.Yp) * WS.Yp; % Yf * WS.Yp.' * pinv(WS.Yp * WS.Yp.') * WS.Yp;  % Eq. (22)
+        WS.YHat = projOrth( Yf, WS.Yp ); % Yf * WS.Yp.' * pinv(WS.Yp * WS.Yp.') * WS.Yp;  % Eq. (22)
         
         Yp_Plus = [WS.Yp; WS.Yii];
-        WS.YHatMinus = (Yf_Minus / Yp_Plus) * Yp_Plus; % Yf_Minus * Yp_Plus.' * pinv(Yp_Plus * Yp_Plus.') * Yp_Plus;  % Eq. (23)
+        WS.YHatMinus = projOrth( Yf_Minus, Yp_Plus ); % Yf_Minus * Yp_Plus.' * pinv(Yp_Plus * Yp_Plus.') * Yp_Plus;  % Eq. (23)
         
         % Take SVD of YHat
         [WS.YHat_U,WS.YHat_S,~] = svd(WS.YHat, 'econ');     % Eq. (24)
@@ -228,32 +250,36 @@ idSys = struct( ...
     'xCov', xCov ...
 );
 
-end
-
-function [ny, ySamples, N, y1] = getHSize(y, i)
-
-ny = nan; y1 = nan; 
-if ~iscell(y)
-    [ny, ySamples] = size(y); N = ySamples - 2*i + 1;
-    if ~isempty(y)
-        y1 = y(1);
-    end
-else
-    ySamples = [];
-    N = [];
-    for yInd = 1:numel(y)
-        [nyThis, ySamplesThis, NThis, y1This] = getHSize(y{yInd}, i);
-        if yInd == 1
-            ny = nyThis;
-            y1 = y1This;
+if fit_Cz_via_KF && nz > 0
+    if ~iscell(y)
+        if time_first
+            YTF = y;
+            ZTF = z;
         else
-            if nyThis ~= ny
-                error('Size of dimension 1 must be the same in all elements of cell array.');
+            YTF = y';
+            ZTF = z';
+        end
+        [~, ~, xHat] = PSIDPredict(idSys, YTF);
+    else
+        for yInd = 1:numel(y)
+            if time_first
+                YTFThis = y{yInd};
+                ZTFThis = z{yInd};
+            else
+                YTFThis = y{yInd}';
+                ZTFThis = z{yInd}';
+            end
+            [~, ~, xHatThis] = PSIDPredict(idSys, YTFThis);
+            if yInd == 1
+                xHat = xHatThis;
+                ZTF = ZTFThis;
+            else
+                xHat = cat(1, xHat, xHatThis);
+                ZTF = cat(1, ZTF, ZTFThis);
             end
         end
-        ySamples = cat(1, ySamples, ySamplesThis);
-        N = cat(1, N, NThis);
     end
+    [~, idSys.Cz] = projOrth(ZTF', xHat');
 end
-    
+
 end

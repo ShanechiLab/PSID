@@ -10,7 +10,7 @@ addpath(genpath('../source'));
 
 %% Load data
 data = load('./sample_data.mat');
-% This data is generated from a system (shown in Supplementary Fig. 2) with 
+% This data is generated from a system (shown in Supplementary Fig. 1) with 
 % (a) 2 behaviorally relevant latent states, 
 % (b) 2 behaviorally irrelevant latent states, and 
 % (c) 2 states that drive behavior but are not represented in neural activity
@@ -24,7 +24,9 @@ zTrain = data.z(trainInds, :);
 zTest = data.z(testInds, :);
 %% (Example 1) PSID can be used to dissociate and extract only the 
 % behaviorally relevant latent states (with nx = n1 = 2)
-idSys1 = PSID(yTrain', zTrain', 2, 2, 10);
+idSys1 = PSID(yTrain, zTrain, 2, 2, 10);
+% You can also use the time_first=False argument if time is the second dimension:
+% idSys1 = PSID(yTrain', zTrain', 2, 2, 10, [], [], false);
 
 % Predict behavior using the learned model
 [zTestPred1, ~, xTestPred1] = PSIDPredict(idSys1, yTest);
@@ -40,18 +42,19 @@ CCIdeal = arrayfun( @(i)( corr(zTestPredIdeal(:, i), zTest(:, i)) ), 1:nz ); % C
 fprintf('PSID decoding CC = %.3g, ideal decoding CC using true model = %.3g\n', mean(CC), mean(CCIdeal));
 %% (Example 2) Optionally, PSID can additionally also learn the 
 % behaviorally irrelevant latent states (with nx = 4, n1 = 2)
-idSys2 = PSID(yTrain', zTrain', 4, 2, 10);
+idSys2 = PSID(yTrain, zTrain, 4, 2, 10);
 
-%% (Example 3) PSID can be used if data is available in discontinious segments (e.g. different trials)
+%% (Example 3) PSID can be used if data is available in discontinuous segments (e.g. different trials)
 % In this case, y and z data segments must be provided as elements of a cell array
+% Trials do not need to have the same number of samples
 % Here, for example assume that trials start at every 1000 samples.
 % And each each trial has a random length of 500 to 900 samples
 trialStartInds = (1:1000:(size(data.y, 1)-1000))';
 trialDurRange = [900 990];
 trialDur = trialDurRange(1)-1 + randi(diff(trialDurRange)+1, size(trialStartInds));
 trialInds = arrayfun( @(ti)( (trialStartInds(ti)-1+(1:trialDur(ti)))' ), (1:numel(trialStartInds))', 'UniformOutput', false );
-yTrials = arrayfun( @(tInds)( data.y(tInds{1}, :)' ), trialInds, 'UniformOutput', false );
-zTrials = arrayfun( @(tInds)( data.z(tInds{1}, :)' ), trialInds, 'UniformOutput', false );
+yTrials = arrayfun( @(tInds)( data.y(tInds{1}, :) ), trialInds, 'UniformOutput', false );
+zTrials = arrayfun( @(tInds)( data.z(tInds{1}, :) ), trialInds, 'UniformOutput', false );
 
 % Separate data into training and test data:
 trainInds = (1:round(0.5*numel(yTrials)))';
@@ -63,17 +66,15 @@ zTest = zTrials(testInds, :);
 
 idSys3 = PSID(yTrain, zTrain, 2, 2, 10);
 
-yTestT = arrayfun( @(yt)( yt{1}.' ), yTest, 'UniformOutput', false);
-% yTestCat = cell2mat( yTestT ); % Data can also be concatenated for
+% yTestCat = cell2mat( yTest ); % Data can also be concatenated for
                 % decoding if taking last state in a previous trial as the 
                 % initial state in the next trial makes sense
-[zTestPred1, ~, xTestPred1Cell] = PSIDPredict(idSys3, yTestT);
+[zTestPred1, ~, xTestPred1Cell] = PSIDPredict(idSys3, yTest);
 
 zTestPred1Cat = cell2mat( zTestPred1 );
 % zTestPred1Cat = zTestPred1;
 
-zTestT = arrayfun( @(zt)( zt{1}.' ), zTest, 'UniformOutput', false);
-zTestCat = cell2mat( zTestT );
+zTestCat = cell2mat( zTest );
 CCTrialBased = arrayfun( @(i)( corr(zTestPred1Cat(:, i), zTestCat(:, i)) ), 1:nz );
 
 fprintf('Trial-based PSID decoding CC = %.3g, ideal decoding CC using true model = %.3g\n', mean(CCTrialBased), mean(CCIdeal));
