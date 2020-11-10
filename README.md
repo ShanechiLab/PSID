@@ -4,8 +4,9 @@ For Python implementation see http://github.com/ShanechiLab/PyPSID
 
 Given signals y_t (e.g. neural signals) and z_t (e.g behavior), PSID learns a dynamic model for y_t while prioritizing the dynamics that are relevant to z_t. 
 
-For the derivation and results in real neural data see:
+For the derivation and results in real neural data see the paper below.
 
+## Publication: 
 Omid G. Sani, Hamidreza Abbaspourazad, Yan T. Wong, Bijan Pesaran, Maryam M. Shanechi. *Modeling behaviorally relevant neural dynamics enabled by preferential subspace identification*. Nature Neuroscience (2020). https://doi.org/10.1038/s41593-020-00733-0
 
 View-only full-text link: https://rdcu.be/b993t
