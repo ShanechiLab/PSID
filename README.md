@@ -6,7 +6,14 @@ Given signals y_t (e.g. neural signals) and z_t (e.g behavior), PSID learns a dy
 
 For the derivation and results in real neural data see:
 
-Omid G. Sani, Bijan Pesaran, Maryam M. Shanechi  (2019). *Modeling behaviorally relevant neural dynamics using Preferential Subspace IDentification (PSID)* bioRxiv 808154, doi: 10.1101/808154, https://doi.org/10.1101/808154
+Omid G. Sani, Hamidreza Abbaspourazad, Yan T. Wong, Bijan Pesaran, Maryam M. Shanechi. *Modeling behaviorally relevant neural dynamics enabled by preferential subspace identification*. Nature Neuroscience (2020). https://doi.org/10.1038/s41593-020-00733-0
+
+View-only full-text link: https://rdcu.be/b993t
+
+Original preprint: https://doi.org/10.1101/808154
+
+You can also find a summary of the paper in the following Twitter thread:
+https://twitter.com/MaryamShanechi/status/1325835609345122304
 
 
 # Usage guide
