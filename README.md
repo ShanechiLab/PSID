@@ -54,7 +54,7 @@ Example simulated data and the script for running PSID on the data is provided i
 This script performs PSID model identification and visualizes the learned eigenvalues similar to in Supplementary Fig 1.
 
 The following notebook also contains some examples with the Python implementation:
-https://colab.research.google.com/drive/16LwTXi_XJnBUlnhH0QXpa86x7CoKH0kZ
+https://github.com/ShanechiLab/PyPSID/blob/main/source/PSID/example/PSID_tutorial.ipynb
 
 # Licence
 Copyright (c) 2020 University of Southern California  
