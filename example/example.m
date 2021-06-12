@@ -20,7 +20,7 @@ rng(42) % For exact reproducibility
 
 N = 2e4; % Total number of samples
 [y, x] = generateLSSMRealization(data.trueSys, 1:N);
-z = (Cz * x')';
+z = (data.trueSys.Cz * x')';
 % Add some z dynamics that are not encoded in y (i.e. epsilon)
 eps = generateLSSMRealization(data.epsSys, 1:N);
 z = z + eps;
@@ -90,7 +90,7 @@ idSys3 = PSID(yTrain, zTrain, 2, 2, 10);
                 % decoding if taking last state in a previous trial as the 
                 % initial state in the next trial makes sense
 [zTestPred1, ~, xTestPred1Cell] = PSIDPredict(idSys3, yTest);
-[zTestPredIdealCell, ~, xTestPredIdealCell] = PSIDPredict(trueSys, yTest);
+[zTestPredIdealCell, ~, xTestPredIdealCell] = PSIDPredict(data.trueSys, yTest);
 
 zTestPred1Cat = cell2mat( zTestPred1 );
 zTestPredIdealCat = cell2mat( zTestPredIdealCell );
