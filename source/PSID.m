@@ -52,8 +52,8 @@
 %             that can be used per:
 %             n1 <= nz * i
 %             nx <= ny * i
-%             So if you have a low dimensional y or z, you typically would choose larger 
-%             values for i, and vice versa.
+%             So if you have a low dimensional y or z, you typically would 
+%             choose larger values for i, and vice versa.
 %     - (6) ws (optional): the ws output from a previous call using the exact 
 %               same data. If calling PSID_QRS repeatedly with the same data 
 %               and horizon, several computationally costly steps can be 
@@ -61,10 +61,22 @@
 %     - (7) fit_Cz_via_KF (default: true): if true (preferred option), 
 %             refits Cz more accurately using a KF after all other 
 %             paramters are learned
-%     - (8) time_first (default: true): if true, will expect the time dimension 
-%             of the data to be the first dimension (e.g. z is T x nz). If false, 
-%             will expect time to be the second dimension in all data 
-%             (e.g. z is nz x T).
+%     - (8) time_first (default: true): if true, will expect the time 
+%             dimension of the data to be the first dimension (e.g. z is T x nz). 
+%             If false, will expect time to be the second dimension in all 
+%             data (e.g. z is nz x T).
+%     - You can also provide any of the following parameters as name-value
+%             pairs:
+%         - remove_mean_Y: if true will remove the mean of Y. 
+%                     Must be true if data is not zero mean. Defaults to true.
+%         - remove_mean_Z: if true will remove the mean of Z. 
+%                     Must be true if data is not zero mean. Defaults to true.
+%         - zscore_Y: if true will z-score Y. It is ok to set this to false,
+%                     but setting to true may help with stopping some dimensions of 
+%                     data from dominating others. Defaults to false.
+%         - zscore_Z: if true will z-score Z. It is ok to set this to false,
+%                     but setting to true may help with stopping some dimensions of 
+%                     data from dominating others. Defaults to false.
 %   Outputs:
 %     - (1) idSys: structure with the system parameters for the identified
 %           system. Will have the following fields (defined above):
@@ -77,13 +89,32 @@
 %       [idSys, WS] = PSID(y, z, nx, n1, i, WS);
 %       idSysSID = PSID(y, z, nx, 0, i); % Set n1=0 for SID
 
-function [idSys, WS] = PSID(y, z, nx, n1, i, WS, fit_Cz_via_KF, time_first)
+function [idSys, WS] = PSID(y, z, nx, n1, i, WS, fit_Cz_via_KF, time_first, varargin)
 
 if nargin < 6, WS = struct; end
 if ~isstruct(WS) || isempty(WS), WS = struct; end
 
 if nargin < 7 || isempty(fit_Cz_via_KF), fit_Cz_via_KF = true; end
 if nargin < 8 || isempty(time_first), time_first = true; end
+
+p = inputParser;
+
+addParameter(p, 'remove_mean_Y', true, @islogical);
+addParameter(p, 'remove_mean_Z', true, @islogical);
+addParameter(p, 'zscore_Y', false, @islogical);
+addParameter(p, 'zscore_Z', false, @islogical);
+
+parse(p,varargin{:});
+
+YPrepModel = PrepModel();
+YPrepModel.fit(y, 'remove_mean', p.Results.remove_mean_Y, 'zscore', p.Results.zscore_Y, 'time_first', time_first);
+y = YPrepModel.apply(y, time_first);
+
+ZPrepModel = PrepModel();
+if ~isempty(z)
+    ZPrepModel.fit(z, 'remove_mean', p.Results.remove_mean_Z, 'zscore', p.Results.zscore_Z, 'time_first', time_first);
+    z = ZPrepModel.apply(z, time_first);
+end
 
 [ny, ySamples, N, y1] = getHSize(y, i, time_first);
 [nz, zSamples, ~, z1] = getHSize(z, i, time_first);
@@ -282,4 +313,7 @@ if fit_Cz_via_KF && nz > 0
     [~, idSys.Cz] = projOrth(ZTF', xHat');
 end
 
+idSys.YPrepModel = YPrepModel;
+idSys.ZPrepModel = ZPrepModel;
+    
 end

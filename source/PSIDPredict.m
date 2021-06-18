@@ -54,11 +54,21 @@ Xp = zeros(nx, 1); % Initial state
 xPred = nan(N, nx);
 for i = 1:N
     xPred(i, :) = Xp; % X(i|i-1)
-    Xp = A * Xp  + K * (y(i, :)' - Cy*Xp); % Kalman prediction
+    yThis = y(i, :);
+    if isfield(idSys, 'YPrepModel') && ~isempty(idSys.YPrepModel)
+        yThis = idSys.YPrepModel.apply(yThis); % Apply any mean-removal/zscoring
+    end
+    Xp = A * Xp  + K * (yThis' - Cy*Xp); % Kalman prediction
 end
 
 yPred = (Cy * xPred.').';
 zPred = (idSys.Cz * xPred.').';
+if isfield(idSys, 'YPrepModel') && ~isempty(idSys.YPrepModel)
+    yPred = idSys.YPrepModel.apply_inverse(yPred); % Apply inverse of any mean-removal/zscoring
+end
+if isfield(idSys, 'ZPrepModel') && ~isempty(idSys.ZPrepModel) % Apply inverse of any mean-removal/zscoring
+    zPred = idSys.ZPrepModel.apply_inverse(zPred);
+end
 
 end
 
