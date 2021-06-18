@@ -56,6 +56,9 @@ This script performs PSID model identification and visualizes the learned eigenv
 The following notebook also contains some examples with the Python implementation:
 https://github.com/ShanechiLab/PyPSID/blob/main/source/PSID/example/PSID_tutorial.ipynb
 
+# Change Log
+You can see the change log in in [ChangeLog.md](https://github.com/ShanechiLab/PSID/blob/main/ChangeLog.md)  
+
 # Licence
 Copyright (c) 2020 University of Southern California  
 See full notice in [LICENSE.md](LICENSE.md)  
