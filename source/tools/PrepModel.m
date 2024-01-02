@@ -58,7 +58,7 @@ classdef PrepModel < handle & matlab.mixin.Copyable
             % Learns the preprocessing model from data
             % Inputs: 
             % (1) Y (numpy array or list of arrays): Input data. First 
-            %           dimension must be timeand the second dimension is 
+            %           dimension must be time and the second dimension is 
             %           the data. Can be a cell array of data in which case 
             %           the stats will be learned from the concatenation of 
             %           all segments along the first dimension.

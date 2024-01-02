@@ -19,7 +19,7 @@
 %               If input is a cell array, will call blkhankskip for each
 %               cell and concatenate the results.
 %     - (2) k: number of block rows
-%     - (3) j (default: N - i + 1 ): number of columns
+%     - (3) j (default: N - 2*i + 1 ): number of columns
 %     - (4) s (default: 0): skip the first s samples of y
 %     - (5) time_first (default: true): if true, will expect the time dimension 
 %             of the data to be the first dimension (e.g. y is T x ny). If false, 
@@ -31,33 +31,34 @@
 
 function H = blkhankskip(y, k, j, s, time_first)
 
-if nargin < 5, time_first = true; end
-
-if iscell(y) % If cell array, extract hankel matrices from each element
-    if nargin < 3 || isempty(j), j = cell(size(y)); end
+    if nargin < 5, time_first = true; end
+    
+    if iscell(y) % If cell array, extract hankel matrices from each element
+        if nargin < 3 || isempty(j), j = cell(size(y)); end
+        if nargin < 4 || isempty(s), s = 0; end
+        
+        H = [];
+        for yInd = 1:numel(y)
+            thisH = blkhankskip(y{yInd}, k, j(yInd), s, time_first);
+            H = cat(2, H, thisH);
+        end
+        return
+    end
+    
+    [ny, N] = getHSize(y, 0, time_first);
+    
+    if nargin < 3 || isempty(j), j = N - 2*k + 1; end
     if nargin < 4 || isempty(s), s = 0; end
     
-    H = [];
-    for yInd = 1:numel(y)
-        thisH = blkhankskip(y{yInd}, k, j(yInd), s, time_first);
-        H = cat(2, H, thisH);
+    H = nan( ny * k, j );
+    for r = 1:k
+        if time_first
+            thisBlock = y( (s+r-1) + (1:j), : )';
+        else
+            thisBlock = y( :, (s+r-1) + (1:j) );
+        end
+        H( (r-1)*ny + (1:ny), : ) = thisBlock;
     end
-    return
-end
-
-[ny, N] = getHSize(y, 0, time_first);
-
-if nargin < 3 || isempty(j), j = N - 2*k + 1; end
-if nargin < 4 || isempty(s), s = 0; end
-
-H = nan( ny * k, j );
-for r = 1:k
-    if time_first
-        thisBlock = y( (s+r-1) + (1:j), : )';
-    else
-        thisBlock = y( :, (s+r-1) + (1:j) );
+    
     end
-    H( (r-1)*ny + (1:ny), : ) = thisBlock;
-end
-
-end
+    
