@@ -132,3 +132,6 @@ Copyright (c) 2020 University of Southern California
 See full notice in [LICENSE.md](LICENSE.md)  
 Omid G. Sani, Parsa Vahidi and Maryam M. Shanechi  
 Shanechi Lab, University of Southern California
+
+# Star History
+[![Star History Chart](https://api.star-history.com/svg?repos=ShanechiLab/PSID&type=Date)](https://star-history.com/#ShanechiLab/PSID&Date)
